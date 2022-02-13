@@ -21,6 +21,10 @@ include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
 add_library(
     lambda_calculus_typechecker_lib STATIC
+    declaration.h declaration.cpp
+    parser_helper.h
+    lct_parser.cpp lct_parser.h
+    lct.cpp lct.h
     ${FLEX_lexer_OUTPUTS}
     ${BISON_parser_OUTPUTS}
 )

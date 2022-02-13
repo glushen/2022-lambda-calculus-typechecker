@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.13)
 
 project(lambda_calculus_typechecker_run)
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 
 add_executable(lambda_calculus_typechecker_run main.cpp)
 
