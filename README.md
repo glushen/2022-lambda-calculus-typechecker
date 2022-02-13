@@ -1,4 +1,5 @@
 ## Lambda calculus typechecker
+[![CI](https://github.com/glushen/2022-lambda-calculus-typechecker/actions/workflows/cmake.yml/badge.svg)](https://github.com/glushen/2022-lambda-calculus-typechecker/actions/workflows/cmake.yml)
 ### Sample usage
 ```
 Enter a sequent in the form [Γ⊢]t[:A] (you could use | as ⊢, \ as λ and -> as →):
