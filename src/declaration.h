@@ -3,12 +3,13 @@
 #include <string>
 #include <memory>
 #include <vector>
+#include <map>
 
 namespace lct {
     class Type {
     public:
         virtual ~Type() = default;
-        virtual bool deep_equals(std::shared_ptr<lct::Type>) = 0;
+        virtual bool deep_equals(std::shared_ptr<lct::Type>, const std::map<std::string, std::string>& type_mapping) = 0;
         virtual std::string to_string() = 0;
     };
 
@@ -17,7 +18,7 @@ namespace lct {
         std::string name;
         explicit TypeVariable(std::string name);
         TypeVariable() = default;
-        bool deep_equals(std::shared_ptr<lct::Type> other) override;
+        bool deep_equals(std::shared_ptr<lct::Type> other, const std::map<std::string, std::string>& type_mapping) override;
         std::string to_string() override;
     };
 
@@ -27,7 +28,27 @@ namespace lct {
         std::shared_ptr<Type> type2;
         TypeArrow(std::shared_ptr<Type> type1, std::shared_ptr<Type> type2);
         TypeArrow() = default;
-        bool deep_equals(std::shared_ptr<lct::Type>) override;
+        bool deep_equals(std::shared_ptr<lct::Type>, const std::map<std::string, std::string>& type_mapping) override;
+        std::string to_string() override;
+    };
+
+    class TypeApplication: public Type {
+    public:
+        std::shared_ptr<Type> type1;
+        std::shared_ptr<Type> type2;
+        TypeApplication(std::shared_ptr<Type> type1, std::shared_ptr<Type> type2);
+        TypeApplication() = default;
+        bool deep_equals(std::shared_ptr<lct::Type>, const std::map<std::string, std::string>& type_mapping) override;
+        std::string to_string() override;
+    };
+
+    class TypeAbstraction: public Type {
+    public:
+        std::string variable_name;
+        std::shared_ptr<Type> type;
+        TypeAbstraction(std::string variable_name, std::shared_ptr<Type> type);
+        TypeAbstraction() = default;
+        bool deep_equals(std::shared_ptr<lct::Type>, const std::map<std::string, std::string>& type_mapping) override;
         std::string to_string() override;
     };
 

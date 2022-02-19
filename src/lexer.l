@@ -9,11 +9,13 @@
 ,         { return COMMA; }
 \(        { return OPENING_BRACKET; }
 \)        { return CLOSING_BRACKET; }
+Π|\\\\    { return PI; }
 λ|\\      { return LAMBDA; }
 \.        { return POINT; }
 →|\-\>    { return ARROW; }
 \:        { return COLON; }
 ⊢|\|      { return TURNSTILE; }
+\*        { return STAR; }
 
 [a-zA-Z0-9]|α|β|γ|δ|ε|ζ|η|θ|ι|κ|λ|μ|ν|ξ|ο|π|ρ|σ|ς|τ|υ|φ|χ|ψ|ω|Α|Β|Γ|Δ|Ε|Ζ|Η|Θ|Ι|Κ|Λ|Μ|Ν|Ξ|Ο|Π|Ρ|Σ|Τ|Υ|Φ|Χ|Ψ|Ω { yylval.name = new std::string(yytext); return NAME; }
 

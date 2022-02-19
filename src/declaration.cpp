@@ -3,6 +3,7 @@
 #include <iostream>
 #include <utility>
 #include <algorithm>
+#include <map>
 
 lct::TypeVariable::TypeVariable(std::string name):
     name(std::move(name)) { }
@@ -10,6 +11,14 @@ lct::TypeVariable::TypeVariable(std::string name):
 lct::TypeArrow::TypeArrow(std::shared_ptr<Type> type1, std::shared_ptr<Type> type2):
     type1(std::move(type1)),
     type2(std::move(type2)) { }
+
+lct::TypeApplication::TypeApplication(std::shared_ptr<Type> type1, std::shared_ptr<Type> type2):
+    type1(std::move(type1)),
+    type2(std::move(type2)) { }
+
+lct::TypeAbstraction::TypeAbstraction(std::string variable_name, std::shared_ptr<Type> type):
+    variable_name(std::move(variable_name)),
+    type(std::move(type)) { }
 
 lct::Variable::Variable(std::string name, std::shared_ptr<Type> type):
     name(std::move(name)),
@@ -65,7 +74,7 @@ std::shared_ptr<lct::Type> lct::TermApplication::infer_type(const std::vector<Va
         );
     }
 
-    if (!casted_type1->type1->deep_equals(type2)) {
+    if (!casted_type1->type1->deep_equals(type2, { })) {
         throw std::invalid_argument(
             "Term " + this->term1->to_string() + " with type " + type1->to_string()
             + " could not be applied to the term " + this->term2->to_string() + " with type " + type2->to_string()
@@ -76,16 +85,35 @@ std::shared_ptr<lct::Type> lct::TermApplication::infer_type(const std::vector<Va
 }
 
 
-bool lct::TypeVariable::deep_equals(std::shared_ptr<lct::Type> other) {
+bool lct::TypeVariable::deep_equals(std::shared_ptr<lct::Type> other, const std::map<std::string, std::string>& type_mapping) {
     if (auto casted_other = std::dynamic_pointer_cast<lct::TypeVariable>(other)) {
-        return this->name == casted_other->name;
+        auto mapped_name = type_mapping.contains(this->name) ? type_mapping.at(this->name) : this->name;
+        return mapped_name == casted_other->name;
     }
     return false;
 }
 
-bool lct::TypeArrow::deep_equals(std::shared_ptr<lct::Type> other) {
+bool lct::TypeArrow::deep_equals(std::shared_ptr<lct::Type> other, const std::map<std::string, std::string>& type_mapping) {
     if (auto casted_other = std::dynamic_pointer_cast<lct::TypeArrow>(other)) {
-        return this->type1->deep_equals(casted_other->type1) && this->type2->deep_equals(casted_other->type2);
+        return this->type1->deep_equals(casted_other->type1, type_mapping)
+            && this->type2->deep_equals(casted_other->type2, type_mapping);
+    }
+    return false;
+}
+
+bool lct::TypeApplication::deep_equals(std::shared_ptr<lct::Type> other, const std::map<std::string, std::string>& type_mapping) {
+    if (auto casted_other = std::dynamic_pointer_cast<lct::TypeApplication>(other)) {
+        return this->type1->deep_equals(casted_other->type1, type_mapping)
+            && this->type2->deep_equals(casted_other->type2, type_mapping);
+    }
+    return false;
+}
+
+bool lct::TypeAbstraction::deep_equals(std::shared_ptr<lct::Type> other, const std::map<std::string, std::string>& type_mapping) {
+    if (auto casted_other = std::dynamic_pointer_cast<lct::TypeAbstraction>(other)) {
+        auto new_type_mapping = type_mapping;
+        new_type_mapping[this->variable_name] = casted_other->variable_name;
+        return this->type->deep_equals(casted_other->type, new_type_mapping);
     }
     return false;
 }
@@ -101,6 +129,25 @@ std::string lct::TypeArrow::to_string() {
         type1_string = "(" + type1_string + ")";
     }
     return type1_string + "→" + this->type2->to_string();
+}
+
+std::string lct::TypeApplication::to_string() {
+    auto type1_string = this->type1->to_string();
+    if (std::dynamic_pointer_cast<lct::TypeAbstraction>(this->type1)) {
+        type1_string = "(" + type1_string + ")";
+    }
+
+    auto type2_string = this->type2->to_string();
+    if (std::dynamic_pointer_cast<lct::TypeApplication>(this->type2)
+        || std::dynamic_pointer_cast<lct::TypeAbstraction>(this->type2)) {
+        type2_string = "(" + type2_string + ")";
+    }
+
+    return type1_string + type2_string;
+}
+
+std::string lct::TypeAbstraction::to_string() {
+    return "Π" + this->variable_name + ":*." + this->type->to_string();
 }
 
 
@@ -135,7 +182,7 @@ std::string lct::Variable::to_string() {
 
 std::shared_ptr<lct::Type> lct::Sequent::check_type() {
     auto inferred_type = this->term->infer_type(this->context);
-    if (this->type && !inferred_type->deep_equals(this->type)) {
+    if (this->type && !inferred_type->deep_equals(this->type, { })) {
         throw std::invalid_argument(
             "Inferred type of the sequent is " + inferred_type->to_string()
             + ", but " + this->type->to_string() + " expected"
